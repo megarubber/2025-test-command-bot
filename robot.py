@@ -1,6 +1,29 @@
-import rev
+import commands2
+import typing
 import wpilib
-import commands
 
-class Teste(wpilib.TimedCommandRobot):
+class Test(commands2.TimedCommandRobot):
+    autonomousCommand: typing.Optional[commands2.Command] = None
+
+    def robotInit(self) -> None:
+        self.container = RobotContainer()
     
+    def robotPeriodic(self) -> None:
+        commands2.CommandScheduler.getInstance().run()
+
+    def disabledInit(self) -> None:
+        #self.container.disablePIDSubsystems()
+        pass
+
+    def autonomousInit(self) -> None:
+        self.autonomousCommand = self.container.getAutonomousCommand()
+
+        if self.autonomousCommand:
+            self.autonomousCommand.schedule()
+    
+    def teleopInit(self) -> None:
+        if self.autonomousCommand:
+            self.autonomousCommand.cancel()
+    
+    def testInit(self) -> None:
+        commands2.CommandScheduler.getInstance().cancelAll()
