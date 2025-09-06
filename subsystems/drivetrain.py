@@ -2,6 +2,7 @@ import typing
 import commands2
 import phoenix5
 import wpilib.drive
+import constants
 
 class Drivetrain(commands2.Subsystem):
     def __init__(self) -> None:
@@ -17,3 +18,8 @@ class Drivetrain(commands2.Subsystem):
         self.right.setInverted(True)
 
         self.drivetrain = wpilib.drive.DifferentialDrive(self.left, self.right)
+    
+    def arcadeDrive(
+        self, forward: typing.Callable[[], float], rotation: typing.Callable[[], float]
+    ) -> None:
+        self.drivetrain.arcadeDrive(forward, rotation)

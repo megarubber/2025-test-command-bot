@@ -1,6 +1,7 @@
 import commands2
 import commands2.button
 import commands2.cmd
+import constants
 
 from subsystems.drivetrain import Drivetrain
 from subsystems.camera import Camera
@@ -21,9 +22,9 @@ class RobotContainer:
                 lambda: self.robot_drive.arcadeDrive(
                     -self.driver_controller.getLeftY(),
                     self.driver_controller.getRightX()
-                )
-            ),
-            self.robot_drive
+                ),
+                self.robot_drive
+            )
         )
 
     def configureButtonBindings(self) -> None:
