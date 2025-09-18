@@ -11,9 +11,10 @@ class Test(commands2.TimedCommandRobot):
     
     def robotPeriodic(self) -> None:
         commands2.CommandScheduler.getInstance().run()
+        wpilib.SmartDashboard.putNumber("Esquerda", self.container.drivetrain.getLeftEncoder())
+        wpilib.SmartDashboard.putNumber("Direita", self.container.drivetrain.getRightEnconder())
 
     def disabledInit(self) -> None:
-        #self.container.disablePIDSubsystems()
         pass
 
     def autonomousInit(self) -> None:
