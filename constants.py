@@ -11,4 +11,6 @@ kBaudRate = 9600
 kUSBPort = SerialPort.Port.kUSB1
 kEncoderPPR = 2048.0
 kWheelDiameter = 0.152
+kLeftEncoderPorts = (5, 6)
+kRightEncoderPorts = (7, 8, True)
 kEncoderDistancePerPulse = (kWheelDiameter * pi) / (4 * kEncoderPPR)
