@@ -1,67 +1,121 @@
-import typing
-import commands2
-import phoenix5
-import wpilib.drive
 import constants
-import commands2.sysid
-from wpimath.units import volts
 
-class Drivetrain(commands2.Subsystem):
+from commands2.sysid import SysIdRoutine
+from typing import Callable
+from commands2 import Subsystem, Command
+from phoenix5 import WPI_VictorSPX, NeutralMode
+from wpilib.drive import DifferentialDrive
+from wpimath.geometry import Rotation2d, Pose2d
+from wpimath.units import volts
+from wpilib import RobotController, Encoder, SmartDashboard
+from wpilib.sysid import SysIdRoutineLog
+from pathplannerlib.auto import AutoBuilder
+from pathplannerlib.controller import PPLTVController
+from pathplannerlib.config import RobotConfig
+from wpimath.geometry import Pose2d, Rotation2d
+from wpimath.kinematics import DifferentialDriveOdometry, ChassisSpeeds
+from navx import AHRS
+
+class Drivetrain(Subsystem):
     def __init__(self) -> None:
         super().__init__()
-        self.left1 = phoenix5.WPI_VictorSPX(constants.kLeftMotor1Port)
-        self.left2 = phoenix5.WPI_VictorSPX(constants.kLeftMotor2Port)
-        self.right1 = phoenix5.WPI_VictorSPX(constants.kRightMotor1Port)
-        self.right2 = phoenix5.WPI_VictorSPX(constants.kRightMotor2Port)
+        self.left1 = WPI_VictorSPX(constants.kLeftMotor1Port)
+        self.left2 = WPI_VictorSPX(constants.kLeftMotor2Port)
+        self.right1 = WPI_VictorSPX(constants.kRightMotor1Port)
+        self.right2 = WPI_VictorSPX(constants.kRightMotor2Port)
 
-        self.right1.follow(self.right2)
+        self.right2.follow(self.right1)
         self.right1.setInverted(True)
+        self.right2.setInverted(True)
 
-        self.left1.follow(self.left2)
+        self.left2.follow(self.left1)
 
-        self.left_encoder = wpilib.Encoder(*constants.kLeftEncoderPorts)
-        self.right_encoder = wpilib.Encoder(*constants.kRightEncoderPorts)
+        self.left1.setNeutralMode(NeutralMode.Brake)
+        self.left2.setNeutralMode(NeutralMode.Brake)
+
+        self.right1.setNeutralMode(NeutralMode.Brake)
+        self.right2.setNeutralMode(NeutralMode.Brake)
+
+        self.left_encoder = Encoder(*constants.kLeftEncoderPorts)
+        self.right_encoder = Encoder(*constants.kRightEncoderPorts)
 
         self.left_encoder.setDistancePerPulse(constants.kEncoderDistancePerPulse)
         self.right_encoder.setDistancePerPulse(constants.kEncoderDistancePerPulse)
+        self.navx = AHRS.create_spi()
+        self.navx.reset()
 
-        #self.drivetrain = wpilib.drive.DifferentialDrive(self.left, self.right)
+        self.drivetrain = DifferentialDrive(self.left1, self.right1)
+                
+        self.pose = Pose2d(*constants.kInitialPose)
+        
+        self.odometry = DifferentialDriveOdometry(
+            Rotation2d.fromDegrees(self.navx.getAngle()),
+            0, 0,
+            self.pose
+        )
+
+        self.relativeSpeed = ChassisSpeeds()
+
+        config = RobotConfig.fromGUISettings()
+        
+        '''
+        AutoBuilder.configure(
+            self.pose, # Robot pose supplier
+            self.resetPose, # Method to reset odometry (will be called if your auto has a starting pose)
+            self.relativeSpeed, # ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
+            lambda speeds, feedforwards: self.driveRobotRelative(speeds), # Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also outputs individual module feedforwards
+            PPLTVController(0.02), # PPLTVController is the built in path following controller for differential drive trains
+            config, # The robot configuration
+            self.shouldFlipPath, # Supplier to control path flipping based on alliance color
+            self # Reference to this subsystem to set requirements
+        )
+        '''
 
         def drive(voltage: volts) -> None:
-            self.left.setVoltage(voltage)
-            self.right.setVoltage(voltage)
+            self.left1.setVoltage(voltage)
+            self.right1.setVoltage(voltage)
 
-        self.sys_id_routine = commands2.sysid.SysIdRoutine(
-            commands2.sysid.SysIdRoutine.Config(),
-            commands2.sysid.SysIdRoutine.Mechanism(drive, self.log, self),
+        self.sys_id_routine = SysIdRoutine(
+            SysIdRoutine.Config(),
+            SysIdRoutine.Mechanism(drive, self.log, self),
         )
     
     def arcadeDrive(
-        self, forward: typing.Callable[[], float], rotation: typing.Callable[[], float]
+        self, forward: Callable[[], float], rotation: Callable[[], float]
     ) -> None:
         self.drivetrain.arcadeDrive(forward, rotation)
+    
+    def resetPose(self) -> None:
+        self.pose = Pose2d(*constants.kInitialPose)
+        self.odometry.resetPosition(
+            Rotation2d.fromDegrees(self.navx.getAngle()),
+            0, 0,
+            self.pose
+        )
+        self.left_encoder.reset()
+        self.right_encoder.reset()
 
     def getLeftEncoder(self) -> int: 
         return self.left_encoder.get()
 
-    def getRightEnconder(self) -> int:
+    def getRightEncoder(self) -> int:
         return self.right_encoder.get()
 
-    def sysIdQuasistatic(self, direction: commands2.sysid.SysIdRoutine.Direction) -> commands2.Command:
+    def sysIdQuasistatic(self, direction: SysIdRoutine.Direction) -> Command:
         return self.sys_id_routine.quasistatic(direction)
 
-    def sysIdDynamic(self, direction: commands2.sysid.SysIdRoutine.Direction) -> commands2.Command:
+    def sysIdDynamic(self, direction: SysIdRoutine.Direction) -> Command:
         return self.sys_id_routine.dynamic(direction)
 
-    def log(self, sys_id_routine: wpilib.sysid.SysIdRoutineLog) -> None:
+    def log(self, sys_id_routine: SysIdRoutineLog) -> None:
         sys_id_routine.motor("drive-left").voltage(
-            self.left1.get() * wpilib.RobotController.getBatteryVoltage()
+            self.left1.get() * RobotController.getBatteryVoltage()
         ).position(self.left_encoder.getDistance()).velocity(
             self.left_encoder.getRate()
         )
         
         sys_id_routine.motor("drive-right").voltage(
-            self.right1.get() * wpilib.RobotController.getBatteryVoltage()
+            self.right1.get() * RobotController.getBatteryVoltage()
         ).position(self.right_encoder.getDistance()).velocity(
             self.right_encoder.getRate()
         )
