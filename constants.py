@@ -1,5 +1,5 @@
 from wpilib import SerialPort
-from rev import SparkLowLevel
+from rev import SparkLowLevel, SparkBaseConfig
 
 from math import pi
 
@@ -23,3 +23,4 @@ kSmartCurrentLimit = 40
 kWheelCircumference = pi * kWheelDiameter
 kRotationsToMeters = kWheelCircumference / kGearRatio
 kRotationsPerMinuteToMetersPerSecond = kRotationsToMeters / 60
+kMotorIdle = SparkBaseConfig.IdleMode.kBrake

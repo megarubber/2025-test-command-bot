@@ -30,36 +30,36 @@ class Drivetrain(Subsystem):
         self.right1 = SparkMax(constants.kRightMotor1Port, constants.kBrushless)
         self.right2 = SparkMax(constants.kRightMotor2Port, constants.kBrushless)
 
-        self.right2.follow(self.right1)
-        self.right1.setInverted(True)
-        self.right2.setInverted(True)
+        #self.right2.follow(self.right1)
+        #self.right1.setInverted(True)
+        #self.right2.setInverted(True)
+        #self.left2.follow(self.left1)
 
-        self.left2.follow(self.left1)
-
-        self.config = SparkMaxConfig()
+        config = SparkMaxConfig()
 
         config.smartCurrentLimit(constants.kSmartCurrentLimit)
-        config.idleMode(constants.kMotorIdle)
-        config.encoder.positionConversionFactor(constants.kRotationToMeters)
-        config.encoder.velocityConversionFactor(constants.kRotationsPerMinuteToMetersPerSeconds)
+        config.setIdleMode(constants.kMotorIdle)
+        config.encoder.positionConversionFactor(constants.kRotationsToMeters)
+        config.encoder.velocityConversionFactor(constants.kRotationsPerMinuteToMetersPerSecond)
 
-        self.left1.config(
+        self.left1.configure(
             config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters
         )
 
         config.follow(self.left1)
 
-        self.left2.config(
+        self.left2.configure(
             config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters
         )
 
         config.follow(self.right1)
-        self.right2.config(
+        config.inverted(True)
+        self.right2.configure(
             config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters
         )
 
         config.disableFollowerMode()
-        self.right1.config(
+        self.right1.configure(
             config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters
         )
 
@@ -133,10 +133,13 @@ class Drivetrain(Subsystem):
         self.right_encoder.reset()
 
     def getLeftEncoder(self) -> int: 
-        return self.left_encoder.get()
+        return self.left_encoder.getPosition()
 
     def getRightEncoder(self) -> int:
-        return self.right_encoder.get()
+        return self.right_encoder.getPosition()
+
+    def getAverageDistance(self) -> float:
+        return self.getLeftEncoder() + self.getRightEncoder()
 
     def sysIdQuasistatic(self, direction: SysIdRoutine.Direction) -> Command:
         return self.sys_id_routine.quasistatic(direction)
