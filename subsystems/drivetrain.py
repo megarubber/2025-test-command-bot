@@ -3,7 +3,8 @@ import constants
 from commands2.sysid import SysIdRoutine
 from typing import Callable
 from commands2 import Subsystem, Command
-from phoenix5 import WPI_VictorSPX, NeutralMode
+#from phoenix5 import WPI_VictorSPX, NeutralMode
+from rev import SparkMax, SparkMaxConfig, ResetMode, PersistMode
 from wpilib.drive import DifferentialDrive
 from wpimath.geometry import Rotation2d, Pose2d
 from wpimath.units import volts
@@ -19,10 +20,15 @@ from navx import AHRS
 class Drivetrain(Subsystem):
     def __init__(self) -> None:
         super().__init__()
-        self.left1 = WPI_VictorSPX(constants.kLeftMotor1Port)
-        self.left2 = WPI_VictorSPX(constants.kLeftMotor2Port)
-        self.right1 = WPI_VictorSPX(constants.kRightMotor1Port)
-        self.right2 = WPI_VictorSPX(constants.kRightMotor2Port)
+        #self.left1 = WPI_VictorSPX(constants.kLeftMotor1Port)
+        #self.left2 = WPI_VictorSPX(constants.kLeftMotor2Port)
+        #self.right1 = WPI_VictorSPX(constants.kRightMotor1Port)
+        #self.right2 = WPI_VictorSPX(constants.kRightMotor2Port)
+
+        self.left1 = SparkMax(constants.kLeftMotor1Port, constants.kBrushless)
+        self.left2 = SparkMax(constants.kLeftMotor2Port, constants.kBrushless)
+        self.right1 = SparkMax(constants.kRightMotor1Port, constants.kBrushless)
+        self.right2 = SparkMax(constants.kRightMotor2Port, constants.kBrushless)
 
         self.right2.follow(self.right1)
         self.right1.setInverted(True)
@@ -30,17 +36,48 @@ class Drivetrain(Subsystem):
 
         self.left2.follow(self.left1)
 
-        self.left1.setNeutralMode(NeutralMode.Brake)
-        self.left2.setNeutralMode(NeutralMode.Brake)
+        self.config = SparkMaxConfig()
 
-        self.right1.setNeutralMode(NeutralMode.Brake)
-        self.right2.setNeutralMode(NeutralMode.Brake)
+        config.smartCurrentLimit(constants.kSmartCurrentLimit)
+        config.idleMode(constants.kMotorIdle)
+        config.encoder.positionConversionFactor(constants.kRotationToMeters)
+        config.encoder.velocityConversionFactor(constants.kRotationsPerMinuteToMetersPerSeconds)
 
-        self.left_encoder = Encoder(*constants.kLeftEncoderPorts)
-        self.right_encoder = Encoder(*constants.kRightEncoderPorts)
+        self.left1.config(
+            config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters
+        )
 
-        self.left_encoder.setDistancePerPulse(constants.kEncoderDistancePerPulse)
-        self.right_encoder.setDistancePerPulse(constants.kEncoderDistancePerPulse)
+        config.follow(self.left1)
+
+        self.left2.config(
+            config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters
+        )
+
+        config.follow(self.right1)
+        self.right2.config(
+            config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters
+        )
+
+        config.disableFollowerMode()
+        self.right1.config(
+            config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters
+        )
+
+        #self.left1.setNeutralMode(NeutralMode.Brake)
+        #self.left2.setNeutralMode(NeutralMode.Brake)
+
+        #self.right1.setNeutralMode(NeutralMode.Brake)
+        #self.right2.setNeutralMode(NeutralMode.Brake)
+
+        #self.left_encoder = Encoder(*constants.kLeftEncoderPorts)
+        #self.right_encoder = Encoder(*constants.kRightEncoderPorts)
+
+        #self.left_encoder.setDistancePerPulse(constants.kEncoderDistancePerPulse)
+        #self.right_encoder.setDistancePerPulse(constants.kEncoderDistancePerPulse)
+        
+        self.left_encoder = self.left1.getEncoder()
+        self.right_encoder = self.right1.getEncoder()
+        
         self.navx = AHRS.create_spi()
         self.navx.reset()
 

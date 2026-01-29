@@ -1,12 +1,13 @@
 from wpilib import SerialPort
+from rev import SparkLowLevel
 
 from math import pi
 
 kDriverControllerPort = 0
-kLeftMotor1Port = 1
-kLeftMotor2Port = 2
-kRightMotor1Port = 3
-kRightMotor2Port = 4
+kLeftMotor1Port = 52
+kLeftMotor2Port = 51
+kRightMotor1Port = 53
+kRightMotor2Port = 55
 kBaudRate = 9600
 kUSBPort = SerialPort.Port.kUSB1
 kEncoderPPR = 2048.0
@@ -17,3 +18,8 @@ kRightEncoderPorts = (3, 4, True)
 kEncoderDistancePerPulse = (kWheelDiameter * pi) / (kEncoderPPR * kGearRatio)
 kClimberMotor = 12
 kInitialPose = (0, 0, 0) # x, y and theta
+kBrushless = SparkLowLevel.MotorType.kBrushless
+kSmartCurrentLimit = 40
+kWheelCircumference = pi * kWheelDiameter
+kRotationsToMeters = kWheelCircumference / kGearRatio
+kRotationsPerMinuteToMetersPerSecond = kRotationsToMeters / 60

@@ -13,7 +13,7 @@ robotpy_version = "2026.1.1"
 components = [
     # "all",
     # "apriltag",
-    "commands2",
+    # "commands2",
     # "cscore",
     # "navx",
     # "pathplannerlib",
@@ -26,4 +26,4 @@ components = [
 ]
 
 # Other pip packages to install
-requires = ["robotpy-ctre", "robotpy-pathplannerlib", "robotpy-navx==2026.0.0b1"]
+requires = ["robotpy-rev", "robotpy-pathplannerlib", "robotpy-navx==2026.0.0b1"]
